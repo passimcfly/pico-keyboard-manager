@@ -1,21 +1,17 @@
 import { SerialPort } from 'serialport';
 
-import type { PortInfo } from '@serialport/bindings-interface'
-
 export class Serial {
     private static instance: Serial;
 
     public connection!: SerialPort;
     
-    private constructor(ports: PortInfo[]) {
+    private constructor(ports: any[]) {
       // Private constructor to prevent instantiation from outside
       const port = ports.find((port) => port.vendorId === "239A") // CircuitPython vendorId
 
       if(!port) {
         throw new Error("No Connection to keyboard")
       }
-
-      console.log(port)
       
       this.connection = new SerialPort({path: port.path, baudRate: 9600})
     }

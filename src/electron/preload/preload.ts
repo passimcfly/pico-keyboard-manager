@@ -3,7 +3,8 @@
 import { IpcRendererEvent, contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  openFile: () => ipcRenderer.invoke('dialog:openFile'),
+  readConfig: () => {ipcRenderer.invoke('dialog:readConfig')},
+  selectIcon: () => ipcRenderer.invoke('dialog:selectIcon'),
   on: (channel: string, func: (event: IpcRendererEvent, args: any[]) => void) => {
     let validChannels = ["button:press"] // <-- Array of all ipcMain Channels used in the electron
     if (validChannels.includes(channel)) {

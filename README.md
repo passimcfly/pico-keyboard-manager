@@ -1,6 +1,6 @@
 # Pico Keyboard Manager
 
-![screenshot](./gitImages/screenshot.png)
+![screenshot](./gitImages/screenshot.jpg)
 
 ## Get Started
 
@@ -16,7 +16,7 @@ git clone https://github.com/passimcfly/pico-keyboard-manager.git
 npm i
 ```
 
-## 3. Run
+### 3. Run
 
 ### dev mode
 
