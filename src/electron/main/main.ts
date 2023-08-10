@@ -12,7 +12,7 @@ import {
 } from 'electron';
 
 import { Serial } from '../com/connection';
-import { ButtonConfig } from "../../models/buttonConfig"
+import { ButtonConfig } from "../models/buttonConfig"
 
 const iconLocation = join(__dirname, '../../images/appIcon.png')
 const trayIconLocation = join(__dirname, '../../images/trayIcon.png')
@@ -168,7 +168,7 @@ function serialEvents(serial: Serial) {
 
 app.whenReady().then(async () => {
     checkIfPathExistsElseCreate(pathToConfig, "dir")
-    // CreateButtonsConfig()
+    CreateButtonsConfig()
     ipcMain.handle('dialog:selectIcon', selectIcon)
     const serial = await Serial.getInstance()
     serialEvents(serial)
@@ -184,8 +184,8 @@ app.on("before-quit", (event) => {
 });
 
 app.on('browser-window-focus', function () {
-    globalShortcut.register("CommandOrControl+R", () => {console.log("CommandOrControl+R")});
-    globalShortcut.register("F5", () => {console.log("F5")});
+    globalShortcut.register("CommandOrControl+R", () => {});
+    globalShortcut.register("F5", () => {});
 });
 
 app.on('browser-window-blur', function () {
