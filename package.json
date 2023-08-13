@@ -52,6 +52,7 @@
     }
   },
   "dependencies": {
+    "@mdi/font": "^7.2.96",
     "serialport": "^11.0.1",
     "usb": "^2.9.0",
     "uuid": "^9.0.0",
