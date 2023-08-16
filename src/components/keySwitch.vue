@@ -71,6 +71,11 @@
                     prepend-inner-icon="mdi-file" 
                     @click="openProgrammFile()"
                   ></v-text-field> 
+                  <v-text-field 
+                    v-model="editConfig.args"
+                    label="Set programm arguments" 
+                    prepend-inner-icon="mdi-file-cog-outline"
+                  ></v-text-field>
                 </div>
               </v-window-item>
             </v-window>
@@ -151,13 +156,15 @@ export default {
         btn: 0,
         iconPath: '',
         color: '',
-        programmPath: ''
+        programmPath: '',
+        args: ''
       },
       editConfig: {
         btn: 0,
         iconPath: '',
         color: '',
-        programmPath: ''
+        programmPath: '',
+        args: ''
       },
       tab: "1",
       isDialogActive: false,
@@ -231,7 +238,8 @@ export default {
         btn: this.$data.editConfig.btn,
         color: this.$data.editConfig.color,
         iconPath: this.$data.editConfig.iconPath,
-        programmPath: this.$data.editConfig.programmPath
+        programmPath: this.$data.editConfig.programmPath,
+        args: this.$data.editConfig.args
       } as ButtonConfig
       //@ts-ignore
       this.$data.config = await window.electronAPI.writeConfig(editConfig);

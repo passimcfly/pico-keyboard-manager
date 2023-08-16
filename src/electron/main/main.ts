@@ -14,6 +14,8 @@ import {
 
 import { Serial } from '../com/connection';
 import { ButtonConfig } from "../models/buttonConfig"
+import { Programm } from '../com/runProgramm';
+import { ButtonState } from '../models/keyState';
 
 const iconLocation = join(__dirname, '../../images/appIcon.png')
 const trayIconLocation = join(__dirname, '../../images/trayIcon.png')
@@ -27,16 +29,22 @@ let tray: Tray | null = null
 
 let forceClose: boolean = false
 
+let keypadEnabled = true
+
 const isDev = process.env.npm_lifecycle_event === "app:dev" ? true : false;
 
+const programm = new Programm()
 
-function checkIfPathExistsElseCreate(path:string, type: "dir" | "file"): boolean {
+
+function checkIfPathExistsElseCreate(path:string, type: "dir" | "file"): true | "created"  {
     const exists = fs.existsSync(path)
     if(!exists){
         if(type === "dir"){
             fs.mkdirSync(path)
+            return "created"
         } else {
             fs.writeFileSync(path, Buffer.from(""))
+            return "created"
         }
     }
     return true
@@ -51,10 +59,19 @@ async function selectPath(_event: IpcMainInvokeEvent, args: {title:string, exten
 }
 
 function readButtonConfigs(): ButtonConfig[] {
-    const configBuffer = fs.readFileSync(`${pathToConfig}\\buttonConfig.json`)
+    const exists = checkIfPathExistsElseCreate(`${pathToConfig}\\buttonConfig.json`, "file")
+    let configBuffer;
+    if(exists) {
+        configBuffer = fs.readFileSync(`${pathToConfig}\\buttonConfig.json`)
+    }
+    
     let config: ButtonConfig[] = []
     try {
-        config = JSON.parse(configBuffer.toString())
+        if(configBuffer){
+            config = JSON.parse(configBuffer.toString())
+        } else {
+            throw new Error("No configBuffer")
+        }
     } catch (error) {
         const clearButtons: ButtonConfig[] = []
         for (let index = 0; index < 12; index++) {
@@ -62,7 +79,8 @@ function readButtonConfigs(): ButtonConfig[] {
                 btn: index,
                 iconPath: "",
                 color: "",
-                programmPath: ""
+                programmPath: "",
+                args: ""
             })
         }
         config = clearButtons
@@ -70,6 +88,8 @@ function readButtonConfigs(): ButtonConfig[] {
 
     return config
 }
+
+let buttonConfigs: ButtonConfig[] = []
 
 function readButtonConfig(_event: IpcMainInvokeEvent, btnNr: number): ButtonConfig {
     let config: ButtonConfig[] = readButtonConfigs()
@@ -80,7 +100,8 @@ function readButtonConfig(_event: IpcMainInvokeEvent, btnNr: number): ButtonConf
             btn: btnNr,
             iconPath: "",
             color: "",
-            programmPath: ""
+            programmPath: "",
+            args: ""
         }
     }
     return btn
@@ -103,12 +124,13 @@ function CreateButtonsConfig() {
             btn: index,
             iconPath: "",
             color: "",
-            programmPath: ""
+            programmPath: "",
+            args: ""
         })
     }
 
     const file = checkIfPathExistsElseCreate(`${pathToConfig}\\buttonConfig.json`, "file")
-    if(!file) {
+    if(file === "created") {
         fs.writeFileSync(`${pathToConfig}\\buttonConfig.json`, Buffer.from(JSON.stringify(buttons)))
     }
 }
@@ -121,6 +143,7 @@ function UpdateButtonConfig(_event: IpcMainInvokeEvent, config: ButtonConfig): B
         configs[index] = config
         fs.writeFileSync(`${pathToConfig}\\buttonConfig.json`, Buffer.from(JSON.stringify(configs)))
     }
+    buttonConfigs = configs
     return config
 }
 
@@ -197,16 +220,21 @@ function closeApp() {
     app.quit()
 }
 
-
-
 function serialEvents(serial: Serial) {
     let strSendKeys: string = ""
+    let SendKeys: ButtonState[] | null = null
     serial.connection.on("open", () => {
         serial.connection.on("readable", () => {
             const strData = Serial.regReadEvent(serial)
-            if(mainWindow && strData && !(strSendKeys === strData)){
-                strSendKeys = strData
-                mainWindow.webContents.send("button:press", {keys: JSON.parse(strData)})
+            if(strData) {
+                if(mainWindow && !(strSendKeys === strData)){
+                    strSendKeys = strData
+                    mainWindow.webContents.send("button:press", {keys: JSON.parse(strData)})
+                }
+                if(keypadEnabled) {
+                    programm.runKeys(JSON.parse(strData), SendKeys, buttonConfigs)
+                }
+                SendKeys = JSON.parse(strData)
             }
         });
         serial.connection.on("close", ()=>{
@@ -228,12 +256,12 @@ function regIpcMainEvents() {
 function setupConfig() {
     checkIfPathExistsElseCreate(pathToConfig, "dir")
     CreateButtonsConfig()
+    buttonConfigs = readButtonConfigs()
 }
 
 app.whenReady().then(async () => {
-    const serial = await Serial.getInstance()
-
     setupConfig()
+    const serial = await Serial.getInstance()
     regIpcMainEvents()
     serialEvents(serial)
     createWindow()
