@@ -94,9 +94,6 @@
 </template>
 
 <style scoped>
-.window-container-item {
-  height: 400px;
-}
 .button-settings {
   width: 450px;
   height: 550px;
@@ -188,7 +185,6 @@ export default {
     this.generateId()
     if(this.btnId) {
       this.$data.btn = document.getElementById(this.btnId)
-      // this.setButtonEvent()
     }
     this.readConfig()
   },

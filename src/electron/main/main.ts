@@ -23,7 +23,10 @@ const trayIconLocation = join(__dirname, '../../images/trayIcon.png')
 const pathToConfig = `${process.env.USERPROFILE}\\Documents\\PicoKeyboardManager`
 
 let mainWindow: BrowserWindow | null = null;
-let mainWindowState: "hidden" | "visible" = "visible"
+let mainWindowState: "hidden" | "visible" = "visible";
+
+let serial: Serial
+(async () => {serial = await Serial.getInstance()})()
 
 let tray: Tray | null = null
 
@@ -144,6 +147,7 @@ function UpdateButtonConfig(_event: IpcMainInvokeEvent, config: ButtonConfig): B
         fs.writeFileSync(`${pathToConfig}\\buttonConfig.json`, Buffer.from(JSON.stringify(configs)))
     }
     buttonConfigs = configs
+    setKeyboardColors(serial)
     return config
 }
 
@@ -246,6 +250,14 @@ function serialEvents(serial: Serial) {
     })
 }
 
+function setKeyboardColors(serial: Serial) {
+    serial.connection.on("open", () => {
+        const colors: string[] = []
+        readButtonConfigs().forEach((btn) => { btn.color.length > 0 ? colors.push(btn.color) : colors.push("#000000") })
+        serial.connection.write(JSON.stringify(colors))
+    })
+}
+
 function regIpcMainEvents() {
     ipcMain.handle('dialog:selectPath', selectPath)
     ipcMain.handle('icon:read', readIconPathIntoBuffer)
@@ -261,9 +273,9 @@ function setupConfig() {
 
 app.whenReady().then(async () => {
     setupConfig()
-    const serial = await Serial.getInstance()
     regIpcMainEvents()
     serialEvents(serial)
+    setKeyboardColors(serial)
     createWindow()
     regTray()
 });
